@@ -4,55 +4,55 @@ import SocialLink from "@/components/SocialLink";
 
 const Index = () => {
   return (
-    <div className="min-h-screen w-full max-w-xl mx-auto px-4 py-8 flex flex-col items-center">
+    <div className="min-h-screen w-full max-w-lg mx-auto px-6 py-12 flex flex-col items-center">
       {/* Profile Section */}
-      <div className="logo-container w-64 mb-8">
+      <div className="logo-container">
         <img
           src="/lovable-uploads/eb62c5bf-e16a-4938-8107-8a49aeaf4c47.png"
           alt="Oasis Gymnastics"
-          className="w-full h-auto drop-shadow-xl"
+          className="w-full h-auto"
         />
       </div>
       
-      <p className="text-gray-700 mb-8 text-center text-lg font-medium animate-fade-in opacity-90">
+      <p className="text-gray-600 mb-8 text-center text-lg">
         Connect with us and stay updated on classes, events, and more!
       </p>
 
       {/* Links Section */}
-      <div className="w-full space-y-4">
+      <div className="w-full space-y-3">
         <SocialLink
           href="https://forms.office.com/r/113hiFhnx6"
           icon={Gift}
           label="Book a Free Trial"
-          color="rgba(244, 63, 94, 0.98)"
+          color="#FF4365"
         />
         
         <SocialLink
           href="https://portal.iclasspro.com/oasisgymnastics"
           icon={Calendar}
           label="Book a Class"
-          color="rgba(45, 212, 191, 0.95)"
+          color="#2DD4BF"
         />
         
         <SocialLink
           href="https://oasisgym.com/"
           icon={Globe}
           label="Visit Website"
-          color="rgba(139, 92, 246, 0.95)"
+          color="#8B5CF6"
         />
         
         <SocialLink
           href="https://www.facebook.com/oasisgym"
           icon={Facebook}
           label="Follow on Facebook"
-          color="rgba(236, 72, 153, 0.95)"
+          color="#EC4899"
         />
         
         <SocialLink
           href="https://www.instagram.com/oasis.gym/"
           icon={Instagram}
           label="Follow on Instagram"
-          color="rgba(45, 212, 191, 0.95)"
+          color="#2DD4BF"
         />
       </div>
 

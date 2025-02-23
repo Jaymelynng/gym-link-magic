@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -33,8 +32,7 @@
     @apply border-border;
   }
   body {
-    @apply bg-gradient-to-br from-purple-100 via-pink-50 to-teal-100 min-h-screen animate-gradient-x;
-    background-size: 400% 400%;
+    @apply bg-gradient-to-br from-purple-50/80 via-pink-50/80 to-teal-50/80 min-h-screen;
   }
 }
 
@@ -59,7 +57,7 @@
 @keyframes fade-in {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
@@ -80,9 +78,8 @@
 }
 
 .link-card {
-  @apply transform transition-all duration-300 hover:scale-105;
+  @apply transform transition-all duration-300 hover:scale-[1.02];
   animation: fade-in 0.5s ease-out forwards;
-  opacity: 0;
 }
 
 .link-card:nth-child(1) { animation-delay: 0.1s; }
@@ -92,23 +89,19 @@
 .link-card:nth-child(5) { animation-delay: 0.5s; }
 
 .social-link {
-  @apply flex items-center justify-center gap-3 w-full px-6 py-4 rounded-xl 
-         text-white font-medium text-lg transition-all duration-300
-         hover:shadow-lg hover:-translate-y-1 backdrop-blur-sm;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
-              0 2px 4px -1px rgba(0, 0, 0, 0.06),
-              inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  @apply flex items-center justify-center gap-4 w-full px-6 py-4 rounded-xl 
+         text-white font-semibold text-lg transition-all duration-300
+         hover:brightness-105 hover:-translate-y-0.5;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
 }
 
 .logo-container {
-  @apply relative animate-float;
+  @apply relative mb-6;
+  width: 280px;
 }
 
-.logo-container::after {
-  content: '';
-  @apply absolute -inset-8 bg-white/60 -z-10 rounded-[2rem] blur-2xl;
-  animation: pulse 4s ease-in-out infinite;
+.logo-container img {
+  @apply drop-shadow-lg;
 }
 
 @keyframes pulse {
