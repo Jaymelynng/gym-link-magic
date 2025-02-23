@@ -21,7 +21,7 @@ const Index = () => {
       {/* Links Section */}
       <div className="w-full space-y-4">
         <SocialLink
-          href="https://portal.iclasspro.com/oasisgymnastics"
+          href="https://forms.office.com/r/113hiFhnx6"
           icon={Gift}
           label="Book a Free Trial"
           color="#F43F5E"
