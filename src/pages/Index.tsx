@@ -1,4 +1,5 @@
-import { Calendar, Globe, Facebook, Instagram } from "lucide-react";
+
+import { Calendar, Globe, Facebook, Instagram, Gift } from "lucide-react";
 import SocialLink from "@/components/SocialLink";
 
 const Index = () => {
@@ -19,6 +20,13 @@ const Index = () => {
 
       {/* Links Section */}
       <div className="w-full space-y-4">
+        <SocialLink
+          href="https://portal.iclasspro.com/oasisgymnastics"
+          icon={Gift}
+          label="Book a Free Trial"
+          color="#F43F5E"
+        />
+        
         <SocialLink
           href="https://portal.iclasspro.com/oasisgymnastics"
           icon={Calendar}
