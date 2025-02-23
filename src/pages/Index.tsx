@@ -6,7 +6,7 @@ const Index = () => {
   return (
     <div className="min-h-screen w-full max-w-xl mx-auto px-4 py-8 flex flex-col items-center">
       {/* Profile Section */}
-      <div className="logo-container w-64 mb-8 animate-fade-in">
+      <div className="logo-container w-64 mb-8">
         <img
           src="/lovable-uploads/eb62c5bf-e16a-4938-8107-8a49aeaf4c47.png"
           alt="Oasis Gymnastics"
@@ -14,7 +14,7 @@ const Index = () => {
         />
       </div>
       
-      <p className="text-gray-600 mb-8 text-center text-lg font-medium animate-fade-in opacity-90">
+      <p className="text-gray-700 mb-8 text-center text-lg font-medium animate-fade-in opacity-90">
         Connect with us and stay updated on classes, events, and more!
       </p>
 
@@ -24,7 +24,7 @@ const Index = () => {
           href="https://forms.office.com/r/113hiFhnx6"
           icon={Gift}
           label="Book a Free Trial"
-          color="rgba(244, 63, 94, 0.95)"
+          color="rgba(244, 63, 94, 0.98)"
         />
         
         <SocialLink
