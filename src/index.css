@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -33,8 +32,7 @@
     @apply border-border;
   }
   body {
-    @apply bg-gradient-to-br from-purple-200 via-pink-100 to-teal-100 min-h-screen animate-gradient-x;
-    background-size: 300% 300%;
+    @apply bg-white min-h-screen;
   }
 }
 
