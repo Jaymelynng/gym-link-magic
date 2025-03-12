@@ -39,7 +39,8 @@ const HomePage = () => {
                   {gym.description}
                 </p>
               </Link>
-            ))}
+            );
+          })}
         </div>
       </div>
     </div>
