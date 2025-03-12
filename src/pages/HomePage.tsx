@@ -5,9 +5,17 @@ import { useGyms } from "@/hooks/useGyms";
 import { GymLocation } from "@/config/gyms";
 import { Skeleton } from "@/components/ui/skeleton";
 import ChatbotButton from "@/components/ChatbotButton";
+import { toast } from "sonner";
 
 const HomePage = () => {
   const { data: gyms, isLoading, error } = useGyms();
+
+  if (error) {
+    toast.error("Failed to load gyms", {
+      description: "Please try again later or contact support.",
+      position: "bottom-right",
+    });
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 md:p-8">

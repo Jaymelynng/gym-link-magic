@@ -1,23 +1,12 @@
 
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getGyms, getGymById, updateGym } from '@/lib/supabase';
 import { GymLocation } from '@/config/gyms';
 
 export const useGyms = () => {
   return useQuery({
     queryKey: ['gyms'],
-    queryFn: async (): Promise<GymLocation[]> => {
-      const { data, error } = await supabase
-        .from('gyms')
-        .select('*');
-      
-      if (error) {
-        console.error('Error fetching gyms:', error);
-        throw new Error('Failed to fetch gyms');
-      }
-      
-      return data || [];
-    },
+    queryFn: getGyms,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };
@@ -25,26 +14,22 @@ export const useGyms = () => {
 export const useGym = (gymId: string | undefined) => {
   return useQuery({
     queryKey: ['gym', gymId],
-    queryFn: async (): Promise<GymLocation | null> => {
-      if (!gymId) return null;
-      
-      const { data, error } = await supabase
-        .from('gyms')
-        .select('*')
-        .eq('id', gymId)
-        .single();
-      
-      if (error) {
-        console.error('Error fetching gym:', error);
-        if (error.code === 'PGRST116') {
-          return null; // No gym found with this ID
-        }
-        throw new Error('Failed to fetch gym');
-      }
-      
-      return data;
-    },
+    queryFn: () => getGymById(gymId as string),
     staleTime: 1000 * 60 * 5, // 5 minutes
     enabled: !!gymId
+  });
+};
+
+export const useUpdateGym = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: Partial<GymLocation> }) => 
+      updateGym(id, updates),
+    onSuccess: (data) => {
+      // Invalidate and refetch the individual gym and the gyms list
+      queryClient.invalidateQueries({ queryKey: ['gym', data.id] });
+      queryClient.invalidateQueries({ queryKey: ['gyms'] });
+    },
   });
 };
