@@ -4,6 +4,7 @@ import { gymColors } from "@/config/colors";
 import { useGyms } from "@/hooks/useGyms";
 import { GymLocation } from "@/config/gyms";
 import { Skeleton } from "@/components/ui/skeleton";
+import ChatbotButton from "@/components/ChatbotButton";
 
 const HomePage = () => {
   const { data: gyms, isLoading, error } = useGyms();
@@ -63,6 +64,8 @@ const HomePage = () => {
           </div>
         )}
       </div>
+      
+      <ChatbotButton />
     </div>
   );
 };
