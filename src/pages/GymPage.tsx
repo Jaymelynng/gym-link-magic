@@ -13,24 +13,23 @@ const GymPage = () => {
     return <Navigate to="/" replace />;
   }
 
-  // Get gym-specific colors or fallback to default
   const colors = gymColors[gym.id] || { primary: "#2DD4BF", secondary: "#8B5CF6" };
 
   return (
-    <div className="min-h-screen w-full max-w-lg mx-auto px-6 py-12 flex flex-col items-center">
-      <div className="logo-container">
+    <div className="min-h-screen w-full max-w-lg mx-auto px-4 sm:px-6 py-8 sm:py-12 flex flex-col items-center">
+      <div className="logo-container w-48 sm:w-64 md:w-72 mb-8 animate-float">
         <img
           src={gym.logo}
           alt={gym.name}
-          className="w-full h-auto"
+          className="w-full h-auto drop-shadow-lg"
         />
       </div>
       
-      <p className="text-gray-600 mb-8 text-center text-lg">
+      <p className="text-gray-600 mb-8 text-center text-base sm:text-lg max-w-md animate-fade-in">
         {gym.description}
       </p>
 
-      <div className="w-full space-y-3">
+      <div className="w-full space-y-4">
         {gym.links.trial && (
           <SocialLink
             href={gym.links.trial}
