@@ -2,13 +2,16 @@
 import { useParams, Navigate } from "react-router-dom";
 import { Calendar, Globe, Facebook, Instagram, Gift } from "lucide-react";
 import SocialLink from "@/components/SocialLink";
-import { gymColors } from "@/config/colors";
 import { useGym } from "@/hooks/useGyms";
+import { useGymColor } from "@/hooks/useGymColors";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const GymPage = () => {
   const { gymId } = useParams();
-  const { data: gym, isLoading, error } = useGym(gymId);
+  const { data: gym, isLoading: isLoadingGym, error: gymError } = useGym(gymId);
+  const { data: colors, isLoading: isLoadingColors } = useGymColor(gymId);
+
+  const isLoading = isLoadingGym || isLoadingColors;
 
   if (isLoading) {
     return (
@@ -24,11 +27,12 @@ const GymPage = () => {
     );
   }
 
-  if (error || !gym) {
+  if (gymError || !gym) {
     return <Navigate to="/" replace />;
   }
 
-  const colors = gymColors[gym.id] || { primary: "#2DD4BF", secondary: "#8B5CF6" };
+  // Use colors from the database, or fall back to defaults if not found
+  const gymColors = colors || { primary: "#2DD4BF", secondary: "#8B5CF6" };
 
   return (
     <div className="min-h-screen w-full max-w-lg mx-auto px-4 sm:px-6 py-8 sm:py-12 flex flex-col items-center">
@@ -50,7 +54,7 @@ const GymPage = () => {
             href={gym.links.trial}
             icon={Gift}
             label="Book a Free Trial"
-            color={colors.secondary}
+            color={gymColors.secondary}
           />
         )}
         
@@ -59,7 +63,7 @@ const GymPage = () => {
             href={gym.links.booking}
             icon={Calendar}
             label="Book a Class"
-            color={colors.primary}
+            color={gymColors.primary}
           />
         )}
         
@@ -68,7 +72,7 @@ const GymPage = () => {
             href={gym.links.website}
             icon={Globe}
             label="Visit Website"
-            color={colors.primary}
+            color={gymColors.primary}
           />
         )}
         
@@ -77,7 +81,7 @@ const GymPage = () => {
             href={gym.links.facebook}
             icon={Facebook}
             label="Follow on Facebook"
-            color={colors.secondary}
+            color={gymColors.secondary}
           />
         )}
         
@@ -86,7 +90,7 @@ const GymPage = () => {
             href={gym.links.instagram}
             icon={Instagram}
             label="Follow on Instagram"
-            color={colors.primary}
+            color={gymColors.primary}
           />
         )}
       </div>

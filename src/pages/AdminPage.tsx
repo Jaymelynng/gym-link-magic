@@ -2,15 +2,15 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, AlertCircle } from "lucide-react";
-import { gymColors } from "@/config/colors";
 import { useToast } from "@/hooks/use-toast";
 import { useGyms, useUpdateGym } from "@/hooks/useGyms";
+import { useGymColor, useUpdateGymColor } from "@/hooks/useGymColors";
 import { GymLocation } from "@/config/gyms";
 import { Skeleton } from "@/components/ui/skeleton";
 import GymList from "@/components/admin/GymList";
 import GymEditor from "@/components/admin/GymEditor";
 import { Button } from "@/components/ui/button";
-import { useQueryClient } from "@tanstack/react-query";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const AdminPage = () => {
   const [selectedGymId, setSelectedGymId] = useState<string | null>(null);
@@ -19,25 +19,39 @@ const AdminPage = () => {
   const [saveError, setSaveError] = useState<Error | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   
   // Fetch gyms from Supabase
   const { 
     data: gyms, 
-    isLoading, 
+    isLoading: isLoadingGyms, 
     error: loadError,
     refetch 
   } = useGyms();
   
-  // Use the Supabase update mutation
-  const { mutate: updateGym, isPending: isSaving } = useUpdateGym();
+  // Fetch colors for the selected gym
+  const {
+    data: gymColors,
+    isLoading: isLoadingColors,
+    error: colorError
+  } = useGymColor(selectedGymId || undefined);
+  
+  // Use the Supabase update mutations
+  const { mutate: updateGym, isPending: isSavingGym } = useUpdateGym();
+  const { mutate: updateGymColor, isPending: isSavingColor } = useUpdateGymColor();
 
   const handleGymSelect = (gymId: string) => {
     const gym = gyms?.find(g => g.id === gymId);
     if (gym) {
       setSelectedGymId(gymId);
       setEditedGym({...gym});
-      setEditedColors({...gymColors[gymId]});
+      
+      // If we have colors for this gym, use them, otherwise use defaults
+      if (gymColors) {
+        setEditedColors({...gymColors});
+      } else {
+        setEditedColors({ primary: "#2DD4BF", secondary: "#8B5CF6" });
+      }
+      
       // Clear previous save errors when selecting a new gym
       setSaveError(null);
     }
@@ -65,11 +79,11 @@ const AdminPage = () => {
   };
 
   const handleSave = () => {
-    if (selectedGymId && editedGym) {
+    if (selectedGymId && editedGym && editedColors) {
       // Clear previous save errors
       setSaveError(null);
       
-      // Use the Supabase update mutation
+      // Use the Supabase update mutations
       updateGym(
         { 
           id: selectedGymId, 
@@ -77,10 +91,29 @@ const AdminPage = () => {
         },
         {
           onSuccess: () => {
-            toast({
-              title: "Changes saved",
-              description: `Updated information for ${editedGym.name}`,
-            });
+            // After gym is updated, update the colors
+            updateGymColor(
+              { 
+                gymId: selectedGymId, 
+                colors: editedColors 
+              },
+              {
+                onSuccess: () => {
+                  toast({
+                    title: "Changes saved",
+                    description: `Updated information and colors for ${editedGym.name}`,
+                  });
+                },
+                onError: (error) => {
+                  setSaveError(error);
+                  toast({
+                    title: "Error saving colors",
+                    description: error.message,
+                    variant: "destructive",
+                  });
+                }
+              }
+            );
           },
           onError: (error) => {
             setSaveError(error);
@@ -105,6 +138,56 @@ const AdminPage = () => {
     }
   };
 
+  // Combined loading state
+  const isLoading = isLoadingGyms || (selectedGymId && isLoadingColors);
+  
+  // Combined saving state
+  const isSaving = isSavingGym || isSavingColor;
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-5xl mx-auto px-4 py-8">
+          <div className="flex items-center justify-between mb-8">
+            <h1 className="text-2xl font-bold">Gym Admin Panel</h1>
+            <button
+              onClick={() => navigate("/")}
+              className="flex items-center gap-1 text-gray-600 hover:text-gray-900"
+            >
+              <ArrowLeft className="h-4 w-4" /> Back to Home
+            </button>
+          </div>
+
+          <Alert variant="destructive" className="mb-8">
+            <AlertCircle className="h-5 w-5" />
+            <AlertTitle>Database Error</AlertTitle>
+            <AlertDescription>
+              {loadError.message}
+              
+              <div className="mt-4 bg-white p-3 rounded border border-red-100">
+                <h3 className="text-sm font-medium">Troubleshooting Steps:</h3>
+                <ol className="text-sm mt-2 space-y-1 list-decimal pl-5">
+                  <li>Ensure you've created the "gyms" and "gym_colors" tables in your Supabase project</li>
+                  <li>Check that the tables have the correct columns matching the expected types</li>
+                  <li>Verify that your database permissions allow read/write access</li>
+                  <li>Confirm your Supabase connection details are correct</li>
+                </ol>
+              </div>
+              
+              <Button 
+                onClick={handleRetry} 
+                className="mt-4"
+                variant="outline"
+              >
+                Retry Connection
+              </Button>
+            </AlertDescription>
+          </Alert>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-5xl mx-auto px-4 py-8">
@@ -118,34 +201,15 @@ const AdminPage = () => {
           </button>
         </div>
 
-        {loadError && (
-          <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <div className="flex gap-3">
-              <AlertCircle className="h-5 w-5 text-red-500 mt-0.5" />
-              <div>
-                <h2 className="font-medium text-red-800">Database Error</h2>
-                <p className="text-sm text-red-700 mt-1">{loadError.message}</p>
-                
-                <div className="mt-4 bg-white p-3 rounded border border-red-100">
-                  <h3 className="text-sm font-medium">Troubleshooting Steps:</h3>
-                  <ol className="text-sm mt-2 space-y-1 list-decimal pl-5">
-                    <li>Ensure you've created a "gyms" table in your Supabase project</li>
-                    <li>Check that the table has the correct columns matching the GymLocation type</li>
-                    <li>Verify that your database permissions allow read/write access</li>
-                    <li>Confirm your Supabase connection details are correct</li>
-                  </ol>
-                </div>
-                
-                <Button 
-                  onClick={handleRetry} 
-                  className="mt-4"
-                  variant="outline"
-                >
-                  Retry Connection
-                </Button>
-              </div>
-            </div>
-          </div>
+        {colorError && (
+          <Alert variant="warning" className="mb-6">
+            <AlertCircle className="h-5 w-5" />
+            <AlertTitle>Warning</AlertTitle>
+            <AlertDescription>
+              There was an issue loading color data. Default colors will be used.
+              {colorError.message}
+            </AlertDescription>
+          </Alert>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">

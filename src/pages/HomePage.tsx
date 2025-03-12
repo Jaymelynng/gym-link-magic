@@ -1,18 +1,28 @@
 
 import { Link } from "react-router-dom";
-import { gymColors } from "@/config/colors";
 import { useGyms } from "@/hooks/useGyms";
+import { useGymColors } from "@/hooks/useGymColors";
 import { GymLocation } from "@/config/gyms";
 import { Skeleton } from "@/components/ui/skeleton";
 import ChatbotButton from "@/components/ChatbotButton";
 import { toast } from "sonner";
 
 const HomePage = () => {
-  const { data: gyms, isLoading, error } = useGyms();
+  const { data: gyms, isLoading: isLoadingGyms, error: gymsError } = useGyms();
+  const { data: colors, isLoading: isLoadingColors, error: colorsError } = useGymColors();
 
-  if (error) {
+  const isLoading = isLoadingGyms || isLoadingColors;
+
+  if (gymsError) {
     toast.error("Failed to load gyms", {
       description: "Please try again later or contact support.",
+      position: "bottom-right",
+    });
+  }
+
+  if (colorsError) {
+    toast.error("Failed to load color themes", {
+      description: "Default colors will be used instead.",
       position: "bottom-right",
     });
   }
@@ -34,14 +44,16 @@ const HomePage = () => {
               </div>
             ))}
           </div>
-        ) : error ? (
-          <div className="text-center text-red-500">
+        ) : gymsError ? (
+          <div className="text-center text-red-500 p-6 bg-red-50 rounded-lg">
             Failed to load gyms. Please try again later.
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {gyms?.map((gym: GymLocation) => {
-              const colors = gymColors[gym.id] || { primary: '#2DD4BF', secondary: '#8B5CF6' };
+              // Use colors from database or fallback to defaults
+              const gymColors = (colors && colors[gym.id]) || { primary: '#2DD4BF', secondary: '#8B5CF6' };
+              
               return (
                 <Link
                   key={gym.id}
@@ -49,8 +61,8 @@ const HomePage = () => {
                   className="group bg-white rounded-xl p-4 shadow-md hover:shadow-lg 
                           transition-all duration-300 transform hover:-translate-y-1 animate-fade-in"
                   style={{ 
-                    borderLeft: `4px solid ${colors?.primary || '#2DD4BF'}`,
-                    borderBottom: `4px solid ${colors?.secondary || '#8B5CF6'}`
+                    borderLeft: `4px solid ${gymColors?.primary || '#2DD4BF'}`,
+                    borderBottom: `4px solid ${gymColors?.secondary || '#8B5CF6'}`
                   }}
                 >
                   <div className="aspect-video relative mb-4 overflow-hidden rounded-lg">
