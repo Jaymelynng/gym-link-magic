@@ -5,6 +5,8 @@ import BasicInfoForm from "./BasicInfoForm";
 import LinksForm from "./LinksForm";
 import ColorsForm from "./ColorsForm";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 interface GymEditorProps {
   gym: GymLocation;
@@ -15,6 +17,7 @@ interface GymEditorProps {
   onSave: () => void;
   onPreview: () => void;
   isSaving: boolean;
+  saveError: Error | null;
 }
 
 const GymEditor = ({
@@ -25,11 +28,25 @@ const GymEditor = ({
   onColorChange,
   onSave,
   onPreview,
-  isSaving
+  isSaving,
+  saveError
 }: GymEditorProps) => {
   return (
     <div className="bg-white p-6 rounded-lg shadow md:col-span-3">
       <h2 className="text-xl font-semibold mb-6">Edit {gym.name}</h2>
+      
+      {saveError && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error saving changes</AlertTitle>
+          <AlertDescription>
+            {saveError.message}
+            <p className="text-xs mt-1">
+              Check your database connection and permissions.
+            </p>
+          </AlertDescription>
+        </Alert>
+      )}
       
       <div className="space-y-6">
         <BasicInfoForm gym={gym} onChange={onGymChange} />

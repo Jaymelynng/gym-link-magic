@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, AlertCircle } from "lucide-react";
 import { gymColors } from "@/config/colors";
 import { useToast } from "@/hooks/use-toast";
 import { useGyms, useUpdateGym } from "@/hooks/useGyms";
@@ -9,16 +9,25 @@ import { GymLocation } from "@/config/gyms";
 import { Skeleton } from "@/components/ui/skeleton";
 import GymList from "@/components/admin/GymList";
 import GymEditor from "@/components/admin/GymEditor";
+import { Button } from "@/components/ui/button";
+import { useQueryClient } from "@tanstack/react-query";
 
 const AdminPage = () => {
   const [selectedGymId, setSelectedGymId] = useState<string | null>(null);
   const [editedGym, setEditedGym] = useState<GymLocation | null>(null);
   const [editedColors, setEditedColors] = useState<{primary: string, secondary: string} | null>(null);
+  const [saveError, setSaveError] = useState<Error | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   // Fetch gyms from Supabase
-  const { data: gyms, isLoading, error } = useGyms();
+  const { 
+    data: gyms, 
+    isLoading, 
+    error: loadError,
+    refetch 
+  } = useGyms();
   
   // Use the Supabase update mutation
   const { mutate: updateGym, isPending: isSaving } = useUpdateGym();
@@ -29,6 +38,8 @@ const AdminPage = () => {
       setSelectedGymId(gymId);
       setEditedGym({...gym});
       setEditedColors({...gymColors[gymId]});
+      // Clear previous save errors when selecting a new gym
+      setSaveError(null);
     }
   };
 
@@ -55,6 +66,9 @@ const AdminPage = () => {
 
   const handleSave = () => {
     if (selectedGymId && editedGym) {
+      // Clear previous save errors
+      setSaveError(null);
+      
       // Use the Supabase update mutation
       updateGym(
         { 
@@ -69,6 +83,7 @@ const AdminPage = () => {
             });
           },
           onError: (error) => {
+            setSaveError(error);
             toast({
               title: "Error saving changes",
               description: error.message,
@@ -80,19 +95,15 @@ const AdminPage = () => {
     }
   };
 
+  const handleRetry = () => {
+    refetch();
+  };
+
   const handlePreview = () => {
     if (selectedGymId) {
       navigate(`/gym/${selectedGymId}`);
     }
   };
-
-  if (error) {
-    toast({
-      title: "Error loading gyms",
-      description: "Failed to load gym data. Please try again.",
-      variant: "destructive",
-    });
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -107,47 +118,49 @@ const AdminPage = () => {
           </button>
         </div>
 
+        {loadError && (
+          <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex gap-3">
+              <AlertCircle className="h-5 w-5 text-red-500 mt-0.5" />
+              <div>
+                <h2 className="font-medium text-red-800">Database Error</h2>
+                <p className="text-sm text-red-700 mt-1">{loadError.message}</p>
+                
+                <div className="mt-4 bg-white p-3 rounded border border-red-100">
+                  <h3 className="text-sm font-medium">Troubleshooting Steps:</h3>
+                  <ol className="text-sm mt-2 space-y-1 list-decimal pl-5">
+                    <li>Ensure you've created a "gyms" table in your Supabase project</li>
+                    <li>Check that the table has the correct columns matching the GymLocation type</li>
+                    <li>Verify that your database permissions allow read/write access</li>
+                    <li>Confirm your Supabase connection details are correct</li>
+                  </ol>
+                </div>
+                
+                <Button 
+                  onClick={handleRetry} 
+                  className="mt-4"
+                  variant="outline"
+                >
+                  Retry Connection
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {/* Gym List */}
-          {isLoading ? (
-            <div className="bg-white p-4 rounded-lg shadow md:col-span-1">
-              <Skeleton className="h-6 w-3/4 mb-4" />
-              <div className="space-y-2">
-                {[...Array(6)].map((_, index) => (
-                  <Skeleton key={index} className="h-10 w-full" />
-                ))}
-              </div>
-            </div>
-          ) : gyms && gyms.length > 0 ? (
-            <GymList 
-              gyms={gyms} 
-              selectedGymId={selectedGymId} 
-              onSelectGym={handleGymSelect} 
-            />
-          ) : (
-            <div className="bg-white p-4 rounded-lg shadow md:col-span-1">
-              <p className="text-gray-500">No gyms found</p>
-            </div>
-          )}
+          <GymList 
+            gyms={gyms || []} 
+            selectedGymId={selectedGymId} 
+            onSelectGym={handleGymSelect}
+            isLoading={isLoading}
+            error={loadError}
+            onRetry={handleRetry}
+          />
 
           {/* Edit Form */}
-          {isLoading ? (
-            <div className="bg-white p-6 rounded-lg shadow md:col-span-3">
-              <Skeleton className="h-8 w-1/3 mb-6" />
-              <div className="space-y-6">
-                {[...Array(3)].map((_, index) => (
-                  <div key={index}>
-                    <Skeleton className="h-6 w-1/4 mb-3" />
-                    <div className="space-y-4">
-                      {[...Array(3)].map((_, idx) => (
-                        <Skeleton key={idx} className="h-10 w-full" />
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : editedGym && editedColors ? (
+          {editedGym && editedColors ? (
             <GymEditor
               gym={editedGym}
               colors={editedColors}
@@ -157,10 +170,13 @@ const AdminPage = () => {
               onSave={handleSave}
               onPreview={handlePreview}
               isSaving={isSaving}
+              saveError={saveError}
             />
           ) : (
             <div className="bg-white p-6 rounded-lg shadow md:col-span-3 flex items-center justify-center">
-              <p className="text-gray-500">Select a gym to edit</p>
+              <p className="text-gray-500">
+                {loadError ? "Fix the database connection to edit gyms" : "Select a gym to edit"}
+              </p>
             </div>
           )}
         </div>
