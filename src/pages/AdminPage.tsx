@@ -1,10 +1,14 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Shield, Save, ArrowLeft } from "lucide-react";
-import { gyms, GymLocation } from "@/config/gyms";
+import { ArrowLeft } from "lucide-react";
 import { gymColors } from "@/config/colors";
 import { useToast } from "@/hooks/use-toast";
+import { useGyms, useUpdateGym } from "@/hooks/useGyms";
+import { GymLocation } from "@/config/gyms";
+import { Skeleton } from "@/components/ui/skeleton";
+import GymList from "@/components/admin/GymList";
+import GymEditor from "@/components/admin/GymEditor";
 
 const AdminPage = () => {
   const [selectedGymId, setSelectedGymId] = useState<string | null>(null);
@@ -12,9 +16,15 @@ const AdminPage = () => {
   const [editedColors, setEditedColors] = useState<{primary: string, secondary: string} | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Fetch gyms from Supabase
+  const { data: gyms, isLoading, error } = useGyms();
+  
+  // Use the Supabase update mutation
+  const { mutate: updateGym, isPending: isSaving } = useUpdateGym();
 
   const handleGymSelect = (gymId: string) => {
-    const gym = gyms.find(g => g.id === gymId);
+    const gym = gyms?.find(g => g.id === gymId);
     if (gym) {
       setSelectedGymId(gymId);
       setEditedGym({...gym});
@@ -44,12 +54,30 @@ const AdminPage = () => {
   };
 
   const handleSave = () => {
-    // In a real app, this would save to a database
-    // For now we'll just show a toast
-    toast({
-      title: "Changes saved",
-      description: `Updated information for ${editedGym?.name}`,
-    });
+    if (selectedGymId && editedGym) {
+      // Use the Supabase update mutation
+      updateGym(
+        { 
+          id: selectedGymId, 
+          updates: editedGym 
+        },
+        {
+          onSuccess: () => {
+            toast({
+              title: "Changes saved",
+              description: `Updated information for ${editedGym.name}`,
+            });
+          },
+          onError: (error) => {
+            toast({
+              title: "Error saving changes",
+              description: error.message,
+              variant: "destructive",
+            });
+          }
+        }
+      );
+    }
   };
 
   const handlePreview = () => {
@@ -58,14 +86,19 @@ const AdminPage = () => {
     }
   };
 
+  if (error) {
+    toast({
+      title: "Error loading gyms",
+      description: "Failed to load gym data. Please try again.",
+      variant: "destructive",
+    });
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-5xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-2">
-            <Shield className="h-6 w-6 text-purple-600" />
-            <h1 className="text-2xl font-bold">Gym Admin Panel</h1>
-          </div>
+          <h1 className="text-2xl font-bold">Gym Admin Panel</h1>
           <button
             onClick={() => navigate("/")}
             className="flex items-center gap-1 text-gray-600 hover:text-gray-900"
@@ -76,195 +109,55 @@ const AdminPage = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {/* Gym List */}
-          <div className="bg-white p-4 rounded-lg shadow md:col-span-1">
-            <h2 className="font-semibold mb-4">Select Gym</h2>
-            <div className="space-y-2">
-              {gyms.map((gym) => (
-                <button
-                  key={gym.id}
-                  onClick={() => handleGymSelect(gym.id)}
-                  className={`w-full text-left px-3 py-2 rounded-md transition ${
-                    selectedGymId === gym.id
-                      ? "bg-purple-100 text-purple-800"
-                      : "hover:bg-gray-100"
-                  }`}
-                >
-                  {gym.name}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Edit Form */}
-          {editedGym && editedColors ? (
-            <div className="bg-white p-6 rounded-lg shadow md:col-span-3">
-              <h2 className="text-xl font-semibold mb-6">Edit {editedGym.name}</h2>
-              
-              <div className="space-y-6">
-                {/* Basic Info */}
-                <div>
-                  <h3 className="text-lg font-medium mb-3">Basic Information</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Gym Name
-                      </label>
-                      <input
-                        type="text"
-                        value={editedGym.name}
-                        onChange={(e) => handleGymChange("name", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Description
-                      </label>
-                      <textarea
-                        value={editedGym.description}
-                        onChange={(e) => handleGymChange("description", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                        rows={3}
-                      ></textarea>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Logo URL
-                      </label>
-                      <input
-                        type="text"
-                        value={editedGym.logo}
-                        onChange={(e) => handleGymChange("logo", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Links */}
-                <div>
-                  <h3 className="text-lg font-medium mb-3">Links</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Trial Link
-                      </label>
-                      <input
-                        type="text"
-                        value={editedGym.links.trial || ""}
-                        onChange={(e) => handleLinkChange("trial", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Booking Link
-                      </label>
-                      <input
-                        type="text"
-                        value={editedGym.links.booking || ""}
-                        onChange={(e) => handleLinkChange("booking", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Website
-                      </label>
-                      <input
-                        type="text"
-                        value={editedGym.links.website || ""}
-                        onChange={(e) => handleLinkChange("website", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Facebook
-                      </label>
-                      <input
-                        type="text"
-                        value={editedGym.links.facebook || ""}
-                        onChange={(e) => handleLinkChange("facebook", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Instagram
-                      </label>
-                      <input
-                        type="text"
-                        value={editedGym.links.instagram || ""}
-                        onChange={(e) => handleLinkChange("instagram", e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Colors */}
-                <div>
-                  <h3 className="text-lg font-medium mb-3">Brand Colors</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Primary Color
-                      </label>
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="color"
-                          value={editedColors.primary}
-                          onChange={(e) => handleColorChange("primary", e.target.value)}
-                          className="h-10 w-10 border border-gray-300 rounded"
-                        />
-                        <input
-                          type="text"
-                          value={editedColors.primary}
-                          onChange={(e) => handleColorChange("primary", e.target.value)}
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Secondary Color
-                      </label>
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="color"
-                          value={editedColors.secondary}
-                          onChange={(e) => handleColorChange("secondary", e.target.value)}
-                          className="h-10 w-10 border border-gray-300 rounded"
-                        />
-                        <input
-                          type="text"
-                          value={editedColors.secondary}
-                          onChange={(e) => handleColorChange("secondary", e.target.value)}
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="pt-4 flex justify-end gap-3">
-                  <button
-                    onClick={handlePreview}
-                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition"
-                  >
-                    Preview
-                  </button>
-                  <button
-                    onClick={handleSave}
-                    className="px-4 py-2 text-white bg-purple-600 rounded-md hover:bg-purple-700 transition flex items-center gap-2"
-                  >
-                    <Save className="h-4 w-4" /> Save Changes
-                  </button>
-                </div>
+          {isLoading ? (
+            <div className="bg-white p-4 rounded-lg shadow md:col-span-1">
+              <Skeleton className="h-6 w-3/4 mb-4" />
+              <div className="space-y-2">
+                {[...Array(6)].map((_, index) => (
+                  <Skeleton key={index} className="h-10 w-full" />
+                ))}
               </div>
             </div>
+          ) : gyms && gyms.length > 0 ? (
+            <GymList 
+              gyms={gyms} 
+              selectedGymId={selectedGymId} 
+              onSelectGym={handleGymSelect} 
+            />
+          ) : (
+            <div className="bg-white p-4 rounded-lg shadow md:col-span-1">
+              <p className="text-gray-500">No gyms found</p>
+            </div>
+          )}
+
+          {/* Edit Form */}
+          {isLoading ? (
+            <div className="bg-white p-6 rounded-lg shadow md:col-span-3">
+              <Skeleton className="h-8 w-1/3 mb-6" />
+              <div className="space-y-6">
+                {[...Array(3)].map((_, index) => (
+                  <div key={index}>
+                    <Skeleton className="h-6 w-1/4 mb-3" />
+                    <div className="space-y-4">
+                      {[...Array(3)].map((_, idx) => (
+                        <Skeleton key={idx} className="h-10 w-full" />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : editedGym && editedColors ? (
+            <GymEditor
+              gym={editedGym}
+              colors={editedColors}
+              onGymChange={handleGymChange}
+              onLinkChange={handleLinkChange}
+              onColorChange={handleColorChange}
+              onSave={handleSave}
+              onPreview={handlePreview}
+              isSaving={isSaving}
+            />
           ) : (
             <div className="bg-white p-6 rounded-lg shadow md:col-span-3 flex items-center justify-center">
               <p className="text-gray-500">Select a gym to edit</p>
