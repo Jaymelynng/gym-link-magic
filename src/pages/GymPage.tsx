@@ -2,14 +2,29 @@
 import { useParams, Navigate } from "react-router-dom";
 import { Calendar, Globe, Facebook, Instagram, Gift } from "lucide-react";
 import SocialLink from "@/components/SocialLink";
-import { gyms } from "@/config/gyms";
 import { gymColors } from "@/config/colors";
+import { useGym } from "@/hooks/useGyms";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const GymPage = () => {
   const { gymId } = useParams();
-  const gym = gyms.find(g => g.id === gymId);
+  const { data: gym, isLoading, error } = useGym(gymId);
 
-  if (!gym) {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen w-full max-w-lg mx-auto px-4 sm:px-6 py-8 sm:py-12 flex flex-col items-center">
+        <Skeleton className="w-48 sm:w-64 md:w-72 h-48 mb-8" />
+        <Skeleton className="w-3/4 h-6 mb-8" />
+        <div className="w-full space-y-4">
+          {[...Array(5)].map((_, i) => (
+            <Skeleton key={i} className="w-full h-14" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !gym) {
     return <Navigate to="/" replace />;
   }
 
